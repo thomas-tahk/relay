@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay — Design Spec</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem;
+    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1a1a; background: #fbfbfa;
+  }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .25rem; }
+  h2 { font-size: 1.3rem; margin: 2.4rem 0 .6rem; padding-bottom: .3rem; border-bottom: 2px solid #e5e3df; }
+  h3 { font-size: 1.05rem; margin: 1.6rem 0 .4rem; }
+  p, li { margin: .5rem 0; }
+  ul, ol { padding-left: 1.4rem; }
+  code { background: #efece7; padding: .1rem .35rem; border-radius: 4px; font-size: .88em; }
+  blockquote {
+    margin: 1rem 0; padding: .6rem 1rem; border-left: 4px solid #c9a227;
+    background: #f6f2e6; border-radius: 0 6px 6px 0; font-size: .95em;
+  }
+  .lead { font-size: 1.05rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .93em; display: block; overflow-x: auto; }
+  th, td { border: 1px solid #ddd9d3; padding: .5rem .7rem; text-align: left; }
+  th { background: #f0ece5; }
+  .tag { display: inline-block; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase;
+         background: #1a1a1a; color: #fbfbfa; padding: .15rem .5rem; border-radius: 4px; vertical-align: middle; }
+  hr { border: none; border-top: 1px solid #e5e3df; margin: 2rem 0; }
+  .meta { color: #6b675f; font-size: .9rem; margin-bottom: 1.5rem; }
+  strong { color: #111; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6e3dc; background: #171614; }
+    h2 { border-color: #34322d; }
+    code { background: #2a2823; }
+    blockquote { background: #221f16; border-left-color: #c9a227; }
+    th { background: #26241f; }
+    th, td { border-color: #34322d; }
+    .tag { background: #e6e3dc; color: #171614; }
+    .meta { color: #97928a; }
+    strong { color: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Relay <span class="tag">Design Spec</span></h1>
+<p class="meta">Working codename <strong>Relay</strong> · 2026-07-07 · Status: design locked, pending review → writing-plans</p>
+
+<blockquote>An accessible-by-default, AI-assisted ITSM request tool — a <em>minified ideal ServiceNow</em> — where one plain-language box replaces the confusing intake, Claude classifies and structures the input into correctly-typed records, and a single consolidated workspace kills the REQ→RITM→SCTASK three-page navigation tax. Reskinnable across an entire employer funnel by swapping data, not code.</blockquote>
+
+<h2>Why this project exists</h2>
+<p>This is <strong>flagship #1 of two</strong> (the second — a game-companion app — is a separate, later project, NOT in this spec). It proves the edge: <em>"IT/enterprise operator who now ships, with AI as leverage."</em> Built against a <strong>category</strong> (AI-leverage tooling for unsexy IT/ops workflows), not one company, and <strong>reskinned per application</strong> in ~30 min — resume, not cover letter. Grounded in lived pain: a daily ServiceNow user on a school-district service desk running an ITSM never configured for the team.</p>
+
+<h2>The pains it kills</h2>
+<ol>
+  <li><strong>Intake confusion.</strong> Users get lost choosing a ticket type. → <strong>One plain-language box.</strong> Never pick a type.</li>
+  <li><strong>Request fragmentation.</strong> One request shattered across three pages — <strong>REQ</strong> → <strong>RITM</strong> → <strong>SCTASK</strong>. → <strong>One consolidated workspace</strong>, whole tree actionable inline.</li>
+  <li><strong>Weak search.</strong> Fuzzy search underperforms. → <strong>AI semantic deflection</strong> at intake (built last).</li>
+  <li><strong>Inaccessibility.</strong> Hostile to assistive tech. → <strong>Keyboard- and screen-reader-first</strong>, low-vision teammate as north-star. Public sector = real 508/WCAG obligations = hiring signal for the internal-tools funnel.</li>
+</ol>
+
+<h2>Users — both sides, one flow</h2>
+<ul>
+  <li><strong>Requester:</strong> describes a need/problem in plain language; AI forms the records so they never touch the catalog.</li>
+  <li><strong>Fulfiller / agent:</strong> the AI-structured request lands in a <strong>decluttered consolidated workspace</strong> — full REQ/RITM/SCTASK tree on one page.</li>
+</ul>
+
+<h2>The AI capabilities (all load-bearing)</h2>
+<ol>
+  <li><strong>Classify intent</strong> — incident vs. request — and route to the correct record type. The transferable "right front door" skill.</li>
+  <li><strong>Decompose &amp; structure</strong> — request → REQ + correct RITMs, infer fields, <strong>ask only for genuinely-missing info</strong>. Incidents: classified + routed only, no management.</li>
+  <li><strong>Semantic deflection</strong> — surface relevant KB articles before a ticket is created. Second AI pattern; <strong>built last</strong>, the clean cut-line.</li>
+</ol>
+<p>Mechanism (tool-use vs. structured output, model choice) deferred to plan phase, pinned via the <code>claude-api</code> skill. Claude key is <strong>server-side only</strong>.</p>
+
+<h2>Accessibility approach (the differentiator)</h2>
+<ul>
+  <li>Built on <strong>React Aria Components</strong> — correct a11y is easy to get subtly wrong by hand; React Aria removes the footguns so it's real, not aspirational. Strongest interview answer. <em>Fallback:</em> <code>base-ui</code> (already known) if velocity stalls.</li>
+  <li>Keyboard-first, screen-reader-first; customizable shortcuts + high-contrast/adjustable display for the low-vision user.</li>
+  <li>The single-page workspace is itself an a11y win — fewer navigation stops.</li>
+</ul>
+
+<h2>Architecture</h2>
+<ul>
+  <li><strong>Framework:</strong> Next.js + TypeScript, single repo.</li>
+  <li><strong>AI:</strong> Claude API from a server-side route (key never client-side).</li>
+  <li><strong>UI:</strong> React Aria Components.</li>
+  <li><strong>Persistence:</strong> lightweight DB — Supabase/Postgres vs. SQLite decided at plan time.</li>
+  <li><strong>Deploy:</strong> Vercel.</li>
+</ul>
+
+<h3>The reskin seam — HARD REQUIREMENT</h3>
+<p>The catalog, record schema, fulfillment hierarchy, and branding all live as <strong>DATA / config</strong>, not code. The engine is domain-agnostic and never edited per application. Per application: swap catalog/schema data, swap branding, write one demo scenario from the target's G2/Capterra pain.</p>
+<table>
+  <tr><th>Applying to…</th><th>Swap the catalog to…</th></tr>
+  <tr><td>B2B ops SaaS / ServiceNow-adjacent</td><td>keep the ITSM skin — native</td></tr>
+  <tr><td>Facilities / ops SaaS</td><td>repairs, room bookings, access</td></tr>
+  <tr><td>HR-tech / internal-tools team</td><td>onboarding, offboarding, PTO, equipment</td></tr>
+  <tr><td>Procurement / RevOps</td><td>purchase requests, deal-desk intake</td></tr>
+</table>
+
+<h2>Data model (the slice)</h2>
+<ul>
+  <li><strong>Incident</strong> — standalone; created + routed, no management.</li>
+  <li><strong>Request (REQ)</strong> → <strong>RequestItem (RITM)</strong> (1..n) → <strong>CatalogTask (SCTASK)</strong> (0..n).</li>
+  <li><strong>CatalogItem</strong> + field defs — config/data, the reskin surface.</li>
+  <li><strong>KB Article</strong> — small demo set for deflection.</li>
+</ul>
+
+<h2>Data flow</h2>
+<ol>
+  <li>User types plain-language input.</li>
+  <li>Server route sends input + catalog schema to Claude.</li>
+  <li><em>(Deflection, last)</em> semantic KB search; user may self-resolve.</li>
+  <li>Claude returns record type, matched items, inferred values, what's missing.</li>
+  <li>Minimal clarification loop for missing required fields.</li>
+  <li>Records created &amp; persisted.</li>
+  <li>Fulfiller opens the consolidated workspace.</li>
+</ol>
+
+<h2>Error handling</h2>
+<ul>
+  <li><strong>Malformed/low-confidence AI output:</strong> validate against schema server-side; fall back to a confirm path, never create garbage.</li>
+  <li><strong>Missing required fields:</strong> the clarification loop is the designed path.</li>
+  <li><strong>AI/API down:</strong> degrade to an accessible manual structured form.</li>
+  <li><strong>Search miss:</strong> just create the ticket (deflection is additive).</li>
+</ul>
+
+<h2>"Done" = demo-ready</h2>
+<ul>
+  <li>Two end-to-end scenarios: a multi-item onboarding <strong>request</strong>; an <strong>incident</strong>. Plus a live <strong>deflection</strong> example.</li>
+  <li>Deployed to Vercel.</li>
+  <li>Passes axe/Lighthouse audit + full keyboard walkthrough + screen-reader walkthrough.</li>
+  <li>Phase-2 list documented in-repo.</li>
+</ul>
+
+<h2>Explicitly OUT of scope (phase 2+)</h2>
+<ul>
+  <li>KB authoring / approval / browse (overlaps <code>kb-helper</code> / <code>knowflow</code> — do not rebuild).</li>
+  <li>Approvals / SLAs, change / problem / CMDB.</li>
+  <li>Real ServiceNow integration.</li>
+  <li>AI-learned config recommender.</li>
+  <li>Real auth / RBAC beyond a demo toggle.</li>
+  <li>Performance/load-time tuning (not an AI story).</li>
+</ul>
+
+<h2>Open items for the plan phase</h2>
+<ul>
+  <li>Persistence choice (Supabase/Postgres vs. SQLite).</li>
+  <li>Exact Claude mechanism (tool use vs. structured output) — via <code>claude-api</code>.</li>
+  <li>Semantic search at demo scale (embeddings vs. small-set in-context) — keep minimal.</li>
+  <li>Synthetic district catalog + small KB article set.</li>
+</ul>
+
+<hr>
+<h2>Decisions locked this session</h2>
+<ul>
+  <li>Two flagships; <strong>build this IT/ops tool first</strong>, then the game-companion app (separate session).</li>
+  <li>Core = smart request intake + consolidated workspace; a11y-first; district skin.</li>
+  <li>Users = both requester + fulfiller, one flow.</li>
+  <li>Front door includes lightweight <strong>incident classification</strong>.</li>
+  <li>KB = <strong>semantic deflection only</strong> (built last); authoring/cleanup OUT.</li>
+  <li>Stack = Next.js + TS + Claude (server-side) + React Aria + Vercel.</li>
+  <li>Name = working codename "Relay"; rename freely.</li>
+</ul>
+
+</body>
+</html>

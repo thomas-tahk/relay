@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relay — Implementation Plan</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { max-width: 860px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem;
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1a1a1a; background: #fbfbfa; }
+  h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.25rem; margin: 2.2rem 0 .5rem; padding-bottom: .3rem; border-bottom: 2px solid #e5e3df; }
+  h3 { font-size: 1rem; margin: 1.4rem 0 .3rem; color: #7a5c00; }
+  p, li { margin: .45rem 0; }
+  ul { padding-left: 1.3rem; }
+  code { background: #efece7; padding: .1rem .35rem; border-radius: 4px; font-size: .85em; }
+  pre { background: #f3efe7; padding: .8rem 1rem; border-radius: 8px; overflow-x: auto; font-size: .8rem; line-height: 1.45; }
+  pre code { background: none; padding: 0; }
+  blockquote { margin: 1rem 0; padding: .6rem 1rem; border-left: 4px solid #c9a227; background: #f6f2e6; border-radius: 0 6px 6px 0; font-size: .93em; }
+  .tag { display: inline-block; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; background: #1a1a1a; color: #fbfbfa; padding: .15rem .5rem; border-radius: 4px; vertical-align: middle; }
+  .meta { color: #6b675f; font-size: .9rem; margin-bottom: 1.4rem; }
+  .cut { color: #a33; font-weight: 600; }
+  strong { color: #111; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6e3dc; background: #171614; }
+    h2 { border-color: #34322d; } h3 { color: #d9b64a; }
+    code, pre { background: #26241f; }
+    blockquote { background: #221f16; }
+    .tag { background: #e6e3dc; color: #171614; } .meta { color: #97928a; } strong { color: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Relay <span class="tag">Implementation Plan</span></h1>
+<p class="meta">2026-07-07 · Skim view — the canonical plan with full per-step code is the sibling <code>.md</code>. Execute via superpowers:subagent-driven-development.</p>
+
+<blockquote><strong>Goal:</strong> Ship the Relay MVP — an accessible-by-default AI ITSM intake tool where one plain-language box classifies + structures a request or incident, and a consolidated workspace shows the whole REQ/RITM/SCTASK tree on one page.</blockquote>
+
+<h2>Architecture &amp; stack</h2>
+<p>Next.js (App Router) + TypeScript, single repo. A server-side API route calls Claude (<code>messages.parse()</code> with a JSON schema) to turn plain-language input + the catalog schema into a typed, validated record set. A thin <code>RecordStore</code> hides persistence (in-memory for tests, Supabase for the demo). React Aria Components render both screens to a high a11y bar. Catalog + branding live in <code>config/</code> so the app reskins by data swap.</p>
+<p><strong>Stack:</strong> Next.js 15 · TypeScript · <code>@anthropic-ai/sdk</code> · React Aria Components · Zod · Supabase · Vitest · Playwright + axe-core · Vercel.</p>
+
+<h2>Global constraints</h2>
+<ul>
+  <li>Model <code>claude-opus-4-8</code> (verified current); Haiku/Sonnet is a cost lever — user's call only.</li>
+  <li>Claude key <strong>server-side only</strong>; never import the SDK into a client component.</li>
+  <li>Structured output via <code>messages.parse()</code> + <code>zodOutputFormat</code> — no prefills (400 on Opus 4.8), no deprecated <code>output_format</code>.</li>
+  <li>Reskin seam is load-bearing: catalog / fields / hierarchy / branding are DATA in <code>config/</code>; no engine module imports district strings.</li>
+  <li>Accessibility is a gate — final axe pass must be clean.</li>
+  <li>Scope: request lifecycle + lightweight incident classification. Spec's OUT list stays out.</li>
+</ul>
+
+<h2>File structure</h2>
+<pre><code>config/          catalog.ts · branding.ts · kb-articles.ts   (the reskin surface — DATA)
+src/domain/      types.ts · schema.ts
+src/engine/      intake.ts · assemble.ts · validate.ts        (pure logic, no React/Next)
+src/data/        store.ts · memory-store.ts · supabase-store.ts
+src/app/         api/intake · api/records · page.tsx · workspace/*
+src/components/  IntakeBox · ClarifyDialog · RequestTree · a11y/
+tests/           engine/* · data/* · e2e/* (Playwright + axe)</code></pre>
+
+<h2>Phases &amp; tasks</h2>
+
+<h3>Phase 0 — Scaffold</h3>
+<ul><li><strong>T0</strong> create-next-app, install deps (anthropic sdk, react-aria-components, zod, supabase, vitest, playwright+axe), env placeholders, test runner green.</li></ul>
+
+<h3>Phase 1 — Domain + Data (TDD)</h3>
+<ul>
+  <li><strong>T1</strong> Domain types: <code>Incident</code>, <code>Request(REQ)→RequestItem(RITM)→CatalogTask(SCTASK)</code>, <code>CatalogItem</code>, <code>RecordTree</code>.</li>
+  <li><strong>T2</strong> District <code>catalog.ts</code> (laptop, email, SIS access, software bundle) + Zod <code>IntakeResultSchema</code> (discriminated union on <code>kind</code>).</li>
+  <li><strong>T3</strong> <code>RecordStore</code> interface + in-memory impl (save tree, get, list, toggleTask).</li>
+</ul>
+<pre><code>Request  = { id, summary, createdAt, items: RequestItem[] }
+RequestItem = { id, reqId, catalogItemId, values, tasks: CatalogTask[] }
+CatalogTask = { id, ritmId, label, done }
+Incident = { id, shortDescription, category, urgency, affectedItem, createdAt }</code></pre>
+
+<h3>Phase 2 — AI intake (load-bearing, TDD)</h3>
+<ul>
+  <li><strong>T4</strong> <code>buildIntakeSystemPrompt(catalog)</code> — instructs: incident vs request, match items, infer fields, list genuinely-missing required fields.</li>
+  <li><strong>T5</strong> <code>runIntake(input, {client})</code> — the Claude call (mockable client for tests):</li>
+</ul>
+<pre><code>const res = await client.messages.parse({
+  model: "claude-opus-4-8", max_tokens: 4096,
+  thinking: { type: "adaptive" },            // tunable; drop for latency
+  system: buildIntakeSystemPrompt(catalog),
+  output_config: { format: zodOutputFormat(IntakeResultSchema) },
+  messages: [{ role: "user", content: input }],
+});
+if (!res.parsed_output) throw new Error("intake_unparseable");
+return res.parsed_output;</code></pre>
+<ul><li><strong>T6</strong> <code>validateAgainstCatalog()</code> (still-missing required keys) + <code>assembleTree()</code> (IntakeResult → REQ+RITMs+default SCTASKs, or Incident).</li></ul>
+
+<h3>Phase 3 — API routes (TDD)</h3>
+<ul>
+  <li><strong>T7</strong> <code>POST /api/intake</code> → <code>{ result, missing }</code>; empty body 400; key stays server-side.</li>
+  <li><strong>T8</strong> <code>/api/records</code> — POST (assemble+save), GET list, GET <code>[id]</code> tree.</li>
+  <li><strong>T9</strong> Supabase store + <code>schema.sql</code>; <code>getStore()</code> picks Supabase when env present, memory otherwise.</li>
+</ul>
+
+<h3>Phase 4 — Requester UI, a11y-first (e2e TDD)</h3>
+<ul>
+  <li><strong>T10</strong> <code>IntakeBox</code> (React Aria TextField/Label/Button) → POST intake → structured preview. Manual-form fallback if AI fails.</li>
+  <li><strong>T11</strong> <code>ClarifyDialog</code> — asks ONLY the missing required fields → POST records → confirmation with REQ id.</li>
+</ul>
+
+<h3>Phase 5 — Fulfiller workspace (e2e TDD)</h3>
+<ul>
+  <li><strong>T12</strong> <code>/workspace</code> queue — keyboard-focusable list of requests.</li>
+  <li><strong>T13</strong> <code>RequestTree</code> — REQ header → RITM cards → SCTASK checkboxes, <strong>one page</strong> (kills the 3-page tax); toggles persist.</li>
+</ul>
+
+<h3>Phase 6 — Accessibility gate + demo</h3>
+<ul>
+  <li><strong>T14</strong> axe-core zero-violations on all screens; documented keyboard + VoiceOver walkthrough; customizable shortcuts + high-contrast/large-text toggle for the low-vision north-star user.</li>
+  <li><strong>T15</strong> Two hero scenarios end-to-end: onboarding <em>request</em> (multi-RITM) + projector <em>incident</em>.</li>
+</ul>
+
+<h3>Phase 7 — Semantic deflection <span class="cut">(THE CUT LINE)</span></h3>
+<blockquote>Build only if 0–6 are green with time to spare. Everything above ships without it.</blockquote>
+<ul><li><strong>T16</strong> ~24 demo KB articles as DATA; <code>suggestArticles(text, kb)</code> via one Claude relevance call over the small in-context KB (no vector DB); surface suggestions at intake before ticket creation. Deflection is additive, never a gate.</li></ul>
+
+<h3>Phase 8 — Deploy</h3>
+<ul><li><strong>T17</strong> Vercel env (keys never in repo); run both scenarios + axe against the live URL; write KNOWN-ISSUES + README (incl. the reskin playbook).</li></ul>
+
+<h2>Definition of done</h2>
+<p>Both hero scenarios run end-to-end on Vercel · axe/Lighthouse clean · full keyboard + screen-reader walkthrough pass · phase-2 backlog documented.</p>
+
+<h2>Error handling</h2>
+<ul>
+  <li>Malformed/low-confidence AI → 422 → manual accessible form; never persist garbage.</li>
+  <li>Missing required fields → the clarification loop, not an error.</li>
+  <li>Claude API down → 503 → manual form; app never fully blocked by the model.</li>
+  <li>Deflection miss → just create the ticket.</li>
+</ul>
+
+</body>
+</html>
