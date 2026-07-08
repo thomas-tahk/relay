@@ -22,6 +22,14 @@ export class MemoryRecordStore implements RecordStore {
     return [...this.requests.values()];
   }
 
+  async getIncident(id: string): Promise<Incident | null> {
+    return this.incidents.get(id) ?? null;
+  }
+
+  async listIncidents(): Promise<Incident[]> {
+    return [...this.incidents.values()];
+  }
+
   async toggleTask(taskId: string): Promise<void> {
     for (const request of this.requests.values()) {
       for (const item of request.items) {

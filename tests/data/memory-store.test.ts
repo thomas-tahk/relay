@@ -51,7 +51,7 @@ describe("MemoryRecordStore", () => {
     await expect(store.toggleTask("missing")).resolves.toBeUndefined();
   });
 
-  it("does not list incidents among requests", async () => {
+  it("keeps incidents separate from requests but retrievable", async () => {
     const store = new MemoryRecordStore();
     const tree: RecordTree = {
       kind: "incident",
@@ -65,6 +65,10 @@ describe("MemoryRecordStore", () => {
       },
     };
     await store.saveTree(tree);
+
     expect(await store.listRequests()).toHaveLength(0);
+    expect(await store.listIncidents()).toHaveLength(1);
+    expect((await store.getIncident("INC001"))?.shortDescription).toBe("Projector dead");
+    expect(await store.getIncident("nope")).toBeNull();
   });
 });
