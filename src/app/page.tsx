@@ -9,8 +9,9 @@ import type { IntakeResult } from "@/domain/schema";
 import { RecordPreview } from "@/components/RecordPreview";
 import { ClarifyDialog } from "@/components/ClarifyDialog";
 import { ManualRequestForm } from "@/components/ManualRequestForm";
+import { DeflectionPanel, type ArticleSuggestion } from "@/components/DeflectionPanel";
 
-type Mode = "idle" | "structuring" | "review" | "manual" | "confirmed";
+type Mode = "idle" | "deflecting" | "deflected" | "structuring" | "review" | "manual" | "confirmed";
 
 export default function RequesterPage() {
   const [mode, setMode] = useState<Mode>("idle");
@@ -19,7 +20,32 @@ export default function RequesterPage() {
   const [missing, setMissing] = useState<MissingField[]>([]);
   const [clarifyOpen, setClarifyOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<ArticleSuggestion[]>([]);
   const [confirmed, setConfirmed] = useState<{ id: string; kind: string } | null>(null);
+
+  // First stop after "describe": offer self-service articles that may solve the
+  // problem now. Additive — any failure just falls through to classification.
+  async function submit() {
+    if (!text.trim()) return;
+    setMode("deflecting");
+    setNotice(null);
+    try {
+      const res = await fetch("/api/deflect", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = (await res.json()) as { suggestions: ArticleSuggestion[] };
+      if (data.suggestions?.length) {
+        setSuggestions(data.suggestions);
+        setMode("deflected");
+        return;
+      }
+    } catch {
+      // Deflection never blocks filing; proceed to classification.
+    }
+    await structure();
+  }
 
   async function structure() {
     if (!text.trim()) return;
@@ -71,6 +97,7 @@ export default function RequesterPage() {
     setText("");
     setResult(null);
     setMissing([]);
+    setSuggestions([]);
     setConfirmed(null);
     setNotice(null);
   }
@@ -99,7 +126,7 @@ export default function RequesterPage() {
               won’t turn on. Relay figures out the rest.
             </p>
 
-            {(mode === "idle" || mode === "structuring") && (
+            {(mode === "idle" || mode === "deflecting") && (
               <TextField
                 className="intake-field"
                 value={text}
@@ -114,21 +141,35 @@ export default function RequesterPage() {
                     className="intake-input"
                     placeholder="e.g. New teacher Priya Shah starts Monday in the High School — she needs a laptop and an email account."
                     onKeyDown={(e) => {
-                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") structure();
+                      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();
                     }}
                   />
                   <div className="intake-row">
                     <span className="hint">⌘/Ctrl + Enter to submit</span>
                     <Button
                       className="btn btn-primary"
-                      onPress={structure}
-                      isDisabled={!text.trim() || mode === "structuring"}
+                      onPress={submit}
+                      isDisabled={!text.trim() || mode === "deflecting"}
                     >
-                      {mode === "structuring" ? "Structuring…" : "Structure my request"}
+                      {mode === "deflecting" ? "Checking…" : "Structure my request"}
                     </Button>
                   </div>
                 </div>
               </TextField>
+            )}
+
+            {mode === "structuring" && (
+              <p className="hint reveal" aria-live="polite" style={{ marginTop: "1.5rem" }}>
+                Structuring your request…
+              </p>
+            )}
+
+            {mode === "deflected" && (
+              <DeflectionPanel
+                suggestions={suggestions}
+                onContinue={structure}
+                onReset={reset}
+              />
             )}
 
             {notice && <div className="notice notice-warn">{notice}</div>}

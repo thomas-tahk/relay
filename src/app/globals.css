@@ -17,6 +17,8 @@
   --request-soft: #d8f0ec;
   --incident: #a5490a; /* burnt amber */
   --incident-soft: #f6e6d5;
+  --kb: #3949ab; /* indigo — self-service, "already solved" */
+  --kb-soft: #e2e6f7;
   --accent: var(--request);
 
   --focus: #2563eb;
@@ -44,6 +46,8 @@
     --request-soft: #12312e;
     --incident: #f0983f;
     --incident-soft: #3a2410;
+    --kb: #a5b0f0;
+    --kb-soft: #1b2140;
     --focus: #60a5fa;
     --danger: #f97066;
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -277,12 +281,75 @@ button {
   background: var(--incident-soft);
   color: var(--incident);
 }
+.chip-kb {
+  background: var(--kb-soft);
+  color: var(--kb);
+}
 .chip::before {
   content: "";
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
   background: currentColor;
+}
+
+/* ---- Deflection (self-service suggestions) ---- */
+.kb-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.kb-item {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--kb);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.kb-details {
+  padding: 0.85rem 1rem;
+}
+.kb-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.kb-summary::-webkit-details-marker {
+  display: none;
+}
+.kb-summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.kb-title {
+  font-weight: 600;
+  color: var(--ink);
+}
+.kb-title::after {
+  content: " ▾";
+  color: var(--muted);
+  font-size: 0.8em;
+}
+.kb-details[open] .kb-title::after {
+  content: " ▴";
+}
+.kb-reason {
+  font-size: 0.86rem;
+  color: var(--kb);
+}
+.kb-body {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 0.92rem;
 }
 
 /* ---- Record cards ---- */

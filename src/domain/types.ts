@@ -69,3 +69,10 @@ export interface CatalogItem {
   /** Labels for the SCTASKs auto-created when this item is requested. */
   defaultTasks: string[];
 }
+
+/** A self-service knowledge-base article (the deflection surface — DATA in config/). */
+export interface KbArticle {
+  id: string;
+  title: string;
+  body: string;
+}
