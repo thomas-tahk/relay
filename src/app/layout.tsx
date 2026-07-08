@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { branding } from "@config/branding";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Relay — plain-language IT requests",
+  title: `${branding.productName} — ${branding.tagline}`,
   description:
     "Say what you need in plain language. Relay classifies it and structures the records — accessible by default.",
 };

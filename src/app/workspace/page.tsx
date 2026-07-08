@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import { ListBox, ListBoxItem } from "react-aria-components";
 import Link from "next/link";
+import { branding } from "@config/branding";
 import type { Incident, Request } from "@/domain/types";
 import { RequestTree } from "@/components/RequestTree";
+import { DisplayControls } from "@/components/DisplayControls";
 
 export default function WorkspacePage() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -44,13 +46,19 @@ export default function WorkspacePage() {
   return (
     <>
       <header className="app-header">
-        <Link className="wordmark" href="/" style={{ textDecoration: "none" }}>
-          <span className="dot" aria-hidden="true" />
-          Relay
-        </Link>
-        <Link className="header-link" href="/">
-          ← New request
-        </Link>
+        <div className="brand">
+          <Link className="wordmark" href="/" style={{ textDecoration: "none" }}>
+            <span className="dot" aria-hidden="true" />
+            {branding.productName}
+          </Link>
+          <span className="org-tag">{branding.org}</span>
+        </div>
+        <nav className="header-actions">
+          <DisplayControls />
+          <Link className="header-link" href="/">
+            ← New request
+          </Link>
+        </nav>
       </header>
 
       <main className="workspace">

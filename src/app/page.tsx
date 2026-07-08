@@ -6,10 +6,12 @@ import Link from "next/link";
 import { catalog } from "@config/catalog";
 import { validateAgainstCatalog, type MissingField } from "@/engine/validate";
 import type { IntakeResult } from "@/domain/schema";
+import { branding } from "@config/branding";
 import { RecordPreview } from "@/components/RecordPreview";
 import { ClarifyDialog } from "@/components/ClarifyDialog";
 import { ManualRequestForm } from "@/components/ManualRequestForm";
 import { DeflectionPanel, type ArticleSuggestion } from "@/components/DeflectionPanel";
+import { DisplayControls } from "@/components/DisplayControls";
 
 type Mode = "idle" | "deflecting" | "deflected" | "structuring" | "review" | "manual" | "confirmed";
 
@@ -105,13 +107,19 @@ export default function RequesterPage() {
   return (
     <>
       <header className="app-header">
-        <span className="wordmark">
-          <span className="dot" aria-hidden="true" />
-          Relay
-        </span>
-        <Link className="header-link" href="/workspace">
-          Fulfiller workspace →
-        </Link>
+        <div className="brand">
+          <span className="wordmark">
+            <span className="dot" aria-hidden="true" />
+            {branding.productName}
+          </span>
+          <span className="org-tag">{branding.org}</span>
+        </div>
+        <nav className="header-actions">
+          <DisplayControls />
+          <Link className="header-link" href="/workspace">
+            Fulfiller workspace →
+          </Link>
+        </nav>
       </header>
 
       <main className="page">

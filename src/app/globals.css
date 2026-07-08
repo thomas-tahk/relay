@@ -124,6 +124,139 @@ button {
   color: var(--ink);
   border-bottom-color: var(--line-strong);
 }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+}
+.org-tag {
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 520px) {
+  .org-tag {
+    display: none;
+  }
+}
+
+/* ---- Display controls (accessibility preferences) ---- */
+.display-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4ch;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+.display-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25em;
+  height: 1.25em;
+  padding: 0 0.35em;
+  margin-left: 0.2ch;
+  border-radius: 999px;
+  background: var(--request);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.display-popover {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  min-width: 220px;
+}
+.display-popover[data-entering] {
+  animation: pop-in 0.14s ease-out;
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  color: var(--ink);
+}
+.switch-track {
+  flex: none;
+  width: 2.4rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  background: var(--line-strong);
+  padding: 0.15rem;
+  transition: background 0.15s ease;
+}
+.switch[data-selected] .switch-track {
+  background: var(--request);
+}
+.switch-thumb {
+  display: block;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s ease;
+}
+.switch[data-selected] .switch-thumb {
+  transform: translateX(1.05rem);
+}
+.switch[data-focus-visible] .switch-track {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.switch-label {
+  font-size: 0.95rem;
+}
+
+/* Preference: high contrast — strengthen borders and secondary text. */
+:root[data-contrast-high] {
+  --muted: var(--ink);
+  --line: var(--ink);
+  --line-strong: var(--ink);
+}
+:root[data-contrast-high] .header-link,
+:root[data-contrast-high] .kb-summary,
+:root[data-contrast-high] a:not(.btn):not(.wordmark) {
+  text-decoration: underline;
+}
+
+/* Preference: large text — scale the rem-based type system up. */
+:root[data-text-large] {
+  font-size: 18px;
+}
+:root[data-text-large] body {
+  font-size: 1.15rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .display-popover[data-entering],
+  .switch-track,
+  .switch-thumb {
+    animation: none;
+    transition: none;
+  }
+}
 
 .page {
   max-width: 760px;
