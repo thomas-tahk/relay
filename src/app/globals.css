@@ -529,3 +529,107 @@ button {
   color: var(--request);
   margin: 0.5rem 0 1.5rem;
 }
+
+/* ---- Workspace (master-detail) ---- */
+.workspace {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0.5rem 1.5rem 4rem;
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+.queue {
+  position: sticky;
+  top: 1rem;
+}
+.queue [role="listbox"] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  outline: none;
+}
+.queue-item {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  outline: none;
+}
+.queue-item[data-hovered] {
+  border-color: var(--line-strong);
+}
+.queue-item[data-selected] {
+  border-color: var(--request);
+  box-shadow: inset 3px 0 0 var(--request);
+}
+.queue-item[data-focus-visible] {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+.queue-item .chip {
+  justify-self: start;
+}
+.queue-title {
+  font-weight: 550;
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.detail {
+  min-width: 0;
+}
+.empty-detail {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
+/* ---- Task checkboxes (React Aria Checkbox) ---- */
+.task-check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+  cursor: pointer;
+  outline: none;
+}
+.task-check .cbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 5px;
+  color: transparent;
+  font-size: 0.8rem;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.task-check[data-selected] .cbox {
+  background: var(--request);
+  border-color: var(--request);
+  color: #fff;
+}
+.task-check[data-focus-visible] .cbox {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.task-check .task-label {
+  flex: 1;
+}
+.task-check[data-selected] .task-label {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.task-id {
+  opacity: 0.7;
+}
